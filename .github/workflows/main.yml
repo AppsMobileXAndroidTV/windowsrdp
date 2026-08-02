@@ -8,14 +8,13 @@ jobs:
     timeout-minutes: 360
 
     steps:
-    - name: Baixando e Configurando o Ngrok
+    - name: Instalando o Ngrok Oficial
       run: |
-        Invoke-WebRequest https://equinox.io -OutFile ngrok.zip
-        Expand-Archive ngrok.zip
+        choco install ngrok -y
     
     - name: Autenticando o Ngrok
       run: |
-        .\ngrok\ngrok.exe authtoken ${{ secrets.NGROK_AUTH_TOKEN }}
+        ngrok config add-authtoken ${{ secrets.NGROK_AUTH_TOKEN }}
     
     - name: Ativando o Acesso Remoto no Windows
       run: |
@@ -25,7 +24,7 @@ jobs:
     
     - name: Criando Túnel e Gerando IP
       run: |
-        Start-Process .\ngrok\ngrok.exe -ArgumentList "tcp 3389"
+        Start-Process ngrok -ArgumentList "tcp 3389"
         Start-Sleep -s 10
         $json = Invoke-RestMethod http://127.0.0
         $url = $json.tunnels.public_url
