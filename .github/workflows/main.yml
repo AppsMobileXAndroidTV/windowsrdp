@@ -1,0 +1,37 @@
+name: Windows-RDP-Ngrok
+
+on: workflow_dispatch
+
+jobs:
+  build:
+    runs-on: windows-latest
+    timeout-minutes: 360
+
+    steps:
+    - name: Baixando e Configurando o Ngrok
+      run: |
+        Invoke-WebRequest https://equinox.io -OutFile ngrok.zip
+        Expand-Archive ngrok.zip
+    
+    - name: Autenticando o Ngrok
+      run: |
+        .\ngrok\ngrok.exe authtoken ${{ secrets.NGROK_AUTH_TOKEN }}
+    
+    - name: Ativando o Acesso Remoto no Windows
+      run: |
+        Set-ItemProperty -Path 'HKLM:\System\CurrentControlSet\Control\Terminal Server' -name "fDenyTSConnections" -Value 0
+        Enable-NetFirewallRule -DisplayGroup "Remote Desktop"
+        Set-ItemProperty -Path 'HKLM:\System\CurrentControlSet\Control\Terminal Server\WinStations\RDP-Tcp' -name "UserAuthentication" -Value 1
+    
+    - name: Criando Túnel e Gerando IP
+      run: |
+        Start-Process .\ngrok\ngrok.exe -ArgumentList "tcp 3389"
+        Start-Sleep -s 10
+        $json = Invoke-RestMethod http://127.0.0
+        $url = $json.tunnels.public_url
+        Write-Host "===================================================="
+        Write-Host "SEU IP DE CONEXÃO É: $url"
+        Write-Host "USUÁRIO: runneradmin"
+        Write-Host "SENHA DA VM: P@ssword1234!"
+        Write-Host "===================================================="
+        while (1) { Start-Sleep -s 60 }
